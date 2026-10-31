@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1d4a7a">
+  <title>SaveBite Retailer Portal</title>
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/portal.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+
+  <!-- ================= Login ================= -->
+  <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
+    <div class="login-card">
+      <div class="brand brand-login">
+        <img src="logo.svg" alt="" width="46" height="46">
+        <span><strong>SaveBite</strong><small>RETAILER PORTAL</small></span>
+      </div>
+      <h1 id="loginTitle">Store staff sign in</h1>
+      <p class="muted">Sign in with the email and password your store administrator gave you.</p>
+      <form id="loginForm" novalidate>
+        <label class="field">Work email
+          <input id="loginEmail" type="email" autocomplete="username" placeholder="you@yourstore.com" required>
+        </label>
+        <label class="field">Password
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn btn-primary btn-block" id="loginSubmit" type="submit">Sign in</button>
+      </form>
+      <p class="form-message" id="loginMessage" role="status" aria-live="polite"></p>
+      <p class="login-foot">Authorised retail staff only. Customers sign in on the SaveBite app.</p>
+    </div>
+  </section>
+
+  <!-- ================= App ================= -->
+  <div class="shell" id="appShell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img src="logo.svg" alt="" width="38" height="38">
+        <span><strong>SaveBite</strong><small>RETAILER PORTAL</small></span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <button class="nav-link active" data-view="dashboard"><span class="ico">▦</span>Dashboard</button>
+        <button class="nav-link" data-view="bill"><span class="ico">⌁</span>New bill</button>
+        <button class="nav-link" data-view="transactions"><span class="ico">☰</span>Transactions</button>
+        <button class="nav-link" data-view="catalogue"><span class="ico">▤</span>Product catalogue</button>
+        <button class="nav-link admin-only" data-view="team" hidden><span class="ico">☺</span>Team</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="who">
+          <span class="avatar" id="staffAvatar">SB</span>
+          <span><strong id="staffName">—</strong><small id="staffRole">—</small></span>
+        </div>
+        <button class="btn btn-ghost-light btn-block" id="logoutButton" type="button">Log out</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuButton" type="button" aria-label="Open menu">☰</button>
+        <div class="crumbs"><span id="storeLabel">Store</span><span class="sep">/</span><strong id="viewTitle">Dashboard</strong></div>
+        <div class="today" id="todayLabel"></div>
+      </header>
+
+      <main class="content">
+
+        <!-- Dashboard -->
+        <section class="view active" id="dashboardView">
+          <div class="page-head">
+            <div><h2>Store overview</h2><p class="muted">Bills shared with SaveBite and how customers responded.</p></div>
+            <button class="btn btn-primary" data-view="bill" type="button">+ New bill</button>
+          </div>
+          <div class="cards">
+            <article class="card stat"><span class="stat-label">Bills processed</span><strong id="statBills">—</strong><small id="statBills24">&nbsp;</small></article>
+            <article class="card stat"><span class="stat-label">Registered customers</span><strong id="statCustomers">—</strong><small id="statServed">&nbsp;</small></article>
+            <article class="card stat"><span class="stat-label">Products sold via SaveBite</span><strong id="statProducts">—</strong><small>units across all bills</small></article>
+            <article class="card stat green"><span class="stat-label">Consent rate</span><strong id="statConsent">—</strong><small id="statConsentSub">&nbsp;</small></article>
+          </div>
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-head"><h3>Recent transactions</h3><button class="link" data-view="transactions" type="button">View all</button></div>
+              <div class="table-wrap"><table>
+                <thead><tr><th>Transaction</th><th>Customer</th><th class="num">Items</th><th class="num">Total</th><th>When</th></tr></thead>
+                <tbody id="recentTx"></tbody>
+              </table></div>
+              <p class="empty hidden" id="recentTxEmpty">No bills yet. Create your first bill to see it here.</p>
+            </article>
+            <article class="card">
+              <div class="card-head"><h3>Customer consent</h3></div>
+              <div class="consent-bar" aria-hidden="true"><span id="consentYesBar"></span></div>
+              <ul class="legend">
+                <li><span class="dot green"></span>Shared with SaveBite <strong id="consentYes">0</strong></li>
+                <li><span class="dot grey"></span>Declined <strong id="consentNo">0</strong></li>
+              </ul>
+              <p class="muted small">Purchases are only sent to a customer's SaveBite account after they say yes at the counter.</p>
+              <div class="card-head spaced"><h3>Recently processed products</h3></div>
+              <ul class="mini-list" id="recentItems"></ul>
+              <p class="empty hidden" id="recentItemsEmpty">Products appear here after a bill is submitted.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- New bill -->
+        <section class="view" id="billView">
+          <div class="page-head">
+            <div><h2>New bill</h2><p class="muted">Identify the customer, scan the products, then ask for consent.</p></div>
+            <button class="btn" id="resetBill" type="button">Cancel bill</button>
+          </div>
+
+          <ol class="steps" id="steps">
+            <li data-step="1" class="current"><span>1</span>Customer</li>
+            <li data-step="2"><span>2</span>Products</li>
+            <li data-step="3"><span>3</span>Review &amp; consent</li>
+          </ol>
+
+          <!-- Step 1 -->
+          <div class="panel" id="step1">
+            <div class="card">
+              <h3>Find the SaveBite customer</h3>
+              <div class="tabs" role="tablist" id="methodTabs">
+                <button class="tab active" role="tab" data-method="phone" type="button">Phone number</button>
+                <button class="tab" role="tab" data-method="customer_code" type="button">SaveBite ID</button>
+                <button class="tab" role="tab" data-method="email" type="button">Email</button>
+              </div>
+              <form id="lookupForm" class="inline-form" novalidate>
+                <label class="field grow"><span id="lookupLabel">Registered phone number</span>
+                  <input id="lookupValue" type="text" inputmode="tel" autocomplete="off" placeholder="98765 43210" required>
+                </label>
+                <button class="btn btn-primary" id="lookupBtn" type="submit">Find customer</button>
+              </form>
+              <p class="form-message" id="lookupMessage" role="status" aria-live="polite"></p>
+
+              <div class="customer-card hidden" id="customerCard">
+                <span class="avatar big" id="custAvatar">A</span>
+                <div class="cust-main">
+                  <strong id="custName">—</strong>
+                  <small>SaveBite ID <b id="custCode">—</b><span id="custPhone"></span></small>
+                  <small class="verified">✓ Registered SaveBite customer</small>
+                </div>
+                <button class="btn btn-primary" id="confirmCustomer" type="button">This is the customer →</button>
+              </div>
+              <p class="muted small">Only a masked name is shown. You can never see a customer's inventory or contact details.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="panel hidden" id="step2">
+            <div class="split">
+              <div class="card">
+                <h3>Add a product</h3>
+                <label class="field">Scan barcode <span class="hint">(scanner types it and presses Enter)</span>
+                  <input id="barcode" type="text" inputmode="numeric" autocomplete="off" placeholder="Scan or type barcode, then Enter" maxlength="32">
+                </label>
+                <div class="search-box">
+                  <label class="field">Or search the catalogue
+                    <input id="productSearch" type="search" autocomplete="off" placeholder="e.g. milk" maxlength="60">
+                  </label>
+                  <ul class="results hidden" id="searchResults"></ul>
+                </div>
+                <p class="form-message" id="itemMessage" role="status" aria-live="polite"></p>
+                <form id="itemForm" novalidate>
+                  <label class="field">Product name
+                    <input id="itemName" type="text" maxlength="120" required>
+                  </label>
+                  <div class="row-2">
+                    <label class="field">Category
+                      <select id="itemCategory">
+                        <option>Dairy</option><option>Groceries</option><option>Beverages</option><option>Snacks</option>
+                        <option>Bakery</option><option>Frozen</option><option>Personal care</option><option>Other</option>
+                      </select>
+                    </label>
+                    <label class="field">Quantity
+                      <input id="itemQty" type="number" min="1" max="1000" step="1" value="1" required>
+                    </label>
+                  </div>
+                  <div class="row-2">
+                    <label class="field">Expiry date <span class="hint">(from the pack)</span>
+                      <input id="itemExpiry" type="date" required>
+                    </label>
+                    <label class="field">Batch / lot no.
+                      <input id="itemBatch" type="text" maxlength="40" placeholder="Optional">
+                    </label>
+                  </div>
+                  <div class="row-2">
+                    <label class="field">Unit price (₹)
+                      <input id="itemPrice" type="number" min="0" step="0.01" placeholder="Optional">
+                    </label>
+                    <div class="field"><span>&nbsp;</span><button class="btn btn-primary btn-block" type="submit">Add to bill</button></div>
+                  </div>
+                </form>
+                <p class="muted small">A barcode identifies the product, not its expiry. Always enter the date printed on the pack.</p>
+              </div>
+
+              <div class="card bill-card">
+                <div class="card-head"><h3>Current bill</h3><span class="pill" id="billCount">0 items</span></div>
+                <p class="muted small" id="billFor"></p>
+                <div class="table-wrap"><table>
+                  <thead><tr><th>Product</th><th class="num">Qty</th><th>Expiry</th><th></th></tr></thead>
+                  <tbody id="billBody"></tbody>
+                </table></div>
+                <p class="empty" id="billEmpty">Scan a product to start the bill.</p>
+                <div class="bill-total"><span>Total</span><strong id="billTotal">—</strong></div>
+                <div class="actions">
+                  <button class="btn" id="backToCustomer" type="button">← Customer</button>
+                  <button class="btn btn-primary grow" id="toReview" type="button" disabled>Review bill →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="panel hidden" id="step3">
+            <div class="split">
+              <div class="card">
+                <div class="card-head"><h3>Review bill</h3><span class="pill" id="reviewCount"></span></div>
+                <p class="muted small" id="reviewFor"></p>
+                <div class="table-wrap"><table>
+                  <thead><tr><th>Product</th><th>Category</th><th class="num">Qty</th><th>Batch</th><th>Expiry</th><th class="num">Price</th></tr></thead>
+                  <tbody id="reviewBody"></tbody>
+                </table></div>
+                <div class="bill-total"><span>Total</span><strong id="reviewTotal">—</strong></div>
+                <button class="btn" id="backToItems" type="button">← Edit products</button>
+              </div>
+              <div class="card consent-card">
+                <h3>Customer consent</h3>
+                <p class="consent-q">Would you like to receive your purchased products and expiry reminders through SaveBite?</p>
+                <p class="muted small">Ask the customer out loud. Do not choose for them. Nothing is sent to SaveBite unless they say yes.</p>
+                <div class="consent-actions">
+                  <button class="btn btn-primary btn-lg" id="consentYesBtn" type="button">Yes, share my purchase with SaveBite</button>
+                  <button class="btn btn-lg" id="consentNoBtn" type="button">No, do not share my purchase information</button>
+                </div>
+                <p class="form-message" id="submitMessage" role="status" aria-live="polite"></p>
+                <button class="btn btn-block hidden" id="reverify" type="button">Look up the customer again</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Done -->
+          <div class="panel hidden" id="stepDone">
+            <div class="card done-card" id="doneCard"></div>
+          </div>
+        </section>
+
+        <!-- Transactions -->
+        <section class="view" id="transactionsView">
+          <div class="page-head">
+            <div><h2>Transactions</h2><p class="muted" id="txScope">Bills submitted to SaveBite.</p></div>
+            <form id="txSearchForm" class="inline-form compact" novalidate>
+              <input id="txSearch" type="search" placeholder="Transaction ID, bill no. or SaveBite ID" aria-label="Search transactions">
+              <button class="btn" type="submit">Search</button>
+            </form>
+          </div>
+          <div class="card">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Transaction</th><th>Bill no.</th><th>Customer</th><th>Store</th><th class="num">Items</th><th class="num">Total</th><th>Cashier</th><th>When</th></tr></thead>
+              <tbody id="txBody"></tbody>
+            </table></div>
+            <p class="empty hidden" id="txEmpty">No transactions found.</p>
+            <div class="center"><button class="btn hidden" id="txMore" type="button">Load more</button></div>
+          </div>
+        </section>
+
+        <!-- Catalogue -->
+        <section class="view" id="catalogueView">
+          <div class="page-head">
+            <div><h2>Product catalogue</h2><p class="muted">Barcodes saved here fill in the name and category at the till. New barcodes are added automatically from bills.</p></div>
+          </div>
+          <div class="split wide-left">
+            <div class="card">
+              <div class="card-head"><h3>Products</h3><input id="catFilter" type="search" placeholder="Filter…" aria-label="Filter catalogue"></div>
+              <div class="table-wrap"><table>
+                <thead><tr><th>Barcode</th><th>Product</th><th>Category</th><th></th></tr></thead>
+                <tbody id="catBody"></tbody>
+              </table></div>
+              <p class="empty hidden" id="catEmpty">No products yet.</p>
+            </div>
+            <div class="card">
+              <h3 id="catFormTitle">Add / update a product</h3>
+              <form id="catForm" novalidate>
+                <label class="field">Barcode<input id="catBarcode" type="text" maxlength="32" required></label>
+                <label class="field">Product name<input id="catName" type="text" maxlength="120" required></label>
+                <label class="field">Category
+                  <select id="catCategory">
+                    <option>Dairy</option><option>Groceries</option><option>Beverages</option><option>Snacks</option>
+                    <option>Bakery</option><option>Frozen</option><option>Personal care</option><option>Other</option>
+                  </select>
+                </label>
+                <button class="btn btn-primary btn-block" type="submit">Save product</button>
+              </form>
+              <p class="form-message" id="catMessage" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Team (admin only) -->
+        <section class="view" id="teamView">
+          <div class="page-head">
+            <div><h2>Team</h2><p class="muted">Employees can bill customers. Administrators can also manage the team and catalogue, and see every store.</p></div>
+          </div>
+          <div class="split wide-left">
+            <div class="card">
+              <div class="card-head"><h3>Staff</h3></div>
+              <div class="table-wrap"><table>
+                <thead><tr><th>Name</th><th>Role</th><th>Store</th><th>Status</th><th></th></tr></thead>
+                <tbody id="teamBody"></tbody>
+              </table></div>
+            </div>
+            <div class="card">
+              <h3>Add an employee</h3>
+              <form id="teamForm" novalidate autocomplete="off">
+                <label class="field">Full name<input id="teamName" type="text" maxlength="80" required></label>
+                <label class="field">Work email<input id="teamEmail" type="email" required></label>
+                <label class="field">Temporary password<input id="teamPassword" type="text" minlength="8" maxlength="72" placeholder="At least 8 characters" required></label>
+                <label class="field">Role
+                  <select id="teamRole"><option value="employee">Employee (cashier)</option><option value="admin">Administrator</option></select>
+                </label>
+                <label class="field">Store<select id="teamStore"></select></label>
+                <button class="btn btn-primary btn-block" type="submit">Create login</button>
+              </form>
+              <p class="form-message" id="teamMessage" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastText"></span></div>
+</body>
+</html>

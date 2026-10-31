@@ -1,0 +1,4 @@
+project_id = "savebite-retailer"
+
+[functions.retailer-api]
+verify_jwt = true

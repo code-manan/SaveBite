@@ -1,0 +1,19 @@
+--- /home/claude/customer_src/savebite_frontend_v3/script.js	2026-10-31 13:14:46.000000000 +0000
++++ cust_new/script.js	2026-10-31 15:48:39.468110370 +0000
+@@ -201,6 +201,7 @@
+     $("authSwitchButton").textContent = signingUp ? "Sign in" : "Create an account";
+     $("authPassword").autocomplete = signingUp ? "new-password" : "current-password";
+     $("authNameField").classList.toggle("hidden", !signingUp);
++    $("authPhoneField").classList.toggle("hidden", !signingUp);
+     authMessage("");
+   }
+ 
+@@ -269,7 +270,7 @@
+           const { data, error } = await supabaseClient.auth.signUp({
+             email,
+             password,
+-            options: { emailRedirectTo: window.location.origin, data: { full_name: fullName || email.split("@")[0] } }
++            options: { emailRedirectTo: window.location.origin, data: { full_name: fullName || email.split("@")[0], phone: $("authPhone").value.trim() } }
+           });
+           if (error) throw error;
+           authMessage(data.session

@@ -1,0 +1,12 @@
+--- /home/claude/customer_src/savebite_frontend_v3/index.html	2026-10-31 13:09:36.000000000 +0000
++++ cust_new/index.html	2026-10-31 15:48:39.467157212 +0000
+@@ -29,6 +29,9 @@
+         <label class="auth-field hidden" id="authNameField">Full name
+           <input id="authName" type="text" autocomplete="name" maxlength="60" placeholder="Your name">
+         </label>
++        <label class="auth-field hidden" id="authPhoneField">Mobile number <small>(so stores can find you at the counter)</small>
++          <input id="authPhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="98765 43210">
++        </label>
+         <label class="auth-field">Email address
+           <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+         </label>

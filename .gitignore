@@ -1,0 +1,17 @@
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated files
+node_modules/
+dist/
+build/
+
+# Local tooling and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.netlify/
+*.log

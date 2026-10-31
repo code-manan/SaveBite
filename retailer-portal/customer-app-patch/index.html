@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4a7a">
+  <title>SaveBite — Your Purchases and Expiry Dates</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Supabase JavaScript client (loaded before our app code) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js" defer></script>
+</head>
+<body data-theme="trust">
+  <!-- Authentication screen: shown until a customer signs in -->
+  <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+    <div class="auth-card">
+      <a class="auth-brand" href="#" aria-label="SaveBite home">
+        <img src="logo.svg" alt="" width="46" height="46">
+        <span><strong>SaveBite</strong><small>PACKED PRODUCT TRACKER</small></span>
+      </a>
+      <p class="auth-eyebrow">WELCOME TO SAVEBITE</p>
+      <h1 id="authTitle">Welcome back</h1>
+      <p class="auth-description" id="authDescription">Sign in to see what you've bought and when it expires.</p>
+      <form id="authForm">
+        <label class="auth-field hidden" id="authNameField">Full name
+          <input id="authName" type="text" autocomplete="name" maxlength="60" placeholder="Your name">
+        </label>
+        <label class="auth-field hidden" id="authPhoneField">Mobile number <small>(so stores can find you at the counter)</small>
+          <input id="authPhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="98765 43210">
+        </label>
+        <label class="auth-field">Email address
+          <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </label>
+        <label class="auth-field">Password
+          <input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required>
+        </label>
+        <button class="auth-submit" id="authSubmit" type="submit">Sign in</button>
+      </form>
+      <p class="auth-switch-line"><span id="authSwitchText">New to SaveBite?</span> <button type="button" class="auth-switch" id="authSwitchButton">Create an account</button></p>
+      <p class="auth-message" id="authMessage" role="status" aria-live="polite"></p>
+      <p class="auth-switch-line hidden" id="demoLine"><button type="button" class="auth-switch" id="demoButton">Preview with sample data</button></p>
+      <p class="auth-footnote">Your purchase list is private to your account.</p>
+    </div>
+  </section>
+
+  <div class="app-shell" id="appShell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="SaveBite home">
+        <svg class="brand-logo" viewBox="0 0 40 40" width="38" height="38" aria-hidden="true">
+          <rect width="40" height="40" rx="12" fill="#1d4a7a"/>
+          <path d="M26.5 14c-1.4-2.2-3.7-3.3-6.6-3.3-3.8 0-6.2 1.9-6.2 4.7 0 6.6 12.6 3.4 12.6 10.2 0 3-2.6 5-6.4 5-3.2 0-5.6-1.2-7.4-3.6" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M27.5 6.5c4.6 0 6.8 2.2 6.8 6.8-4.6 0-6.8-2.2-6.8-6.8z" fill="#5fb37c"/>
+        </svg>
+        <span class="wordmark"><span class="brand-save">Save</span><span class="brand-accent">Bite</span><small>PACKED FOOD TRACKER</small></span>
+      </a>
+
+      <div class="workspace-label">MY SAVEBITE</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-view="dashboard"><span class="nav-icon">▦</span> Dashboard</button>
+        <button class="nav-link" data-view="inventory"><span class="nav-icon">▤</span> My items <span class="nav-count" id="inventoryNavCount">0</span></button>
+        <button class="nav-link" data-view="purchases"><span class="nav-icon">▥</span> Purchases <span class="nav-count" id="purchasesNavCount">0</span></button>
+        <button class="nav-link" data-view="notifications"><span class="nav-icon">♧</span> Notifications <span class="nav-count alert-count" id="navAlertCount">0</span></button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="tip-card">
+          <span class="tip-icon">✳</span>
+          <strong>A little reminder</strong>
+          <p>Small steps to reduce food waste make a big difference.</p>
+        </div>
+        <div class="profile">
+          <div class="avatar" id="profileAvatar">SB</div>
+          <div class="profile-copy"><strong id="profileName">My account</strong><small id="profileEmail">Signed in</small></div>
+          <button class="logout-button" id="logoutButton" type="button">Log out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Toggle navigation">☰</button>
+        <div class="breadcrumb">My SaveBite <span>/</span> <strong id="breadcrumbCurrent">Dashboard</strong></div>
+        <div class="topbar-right">
+          <span class="sync-status" id="syncStatus" role="status" aria-live="polite">Syncing…</span>
+          <span class="today-label" id="todayLabel"></span>
+          <button class="icon-button notification-shortcut" data-view="notifications" aria-label="View notifications">
+            ♧<span class="notification-dot" id="topAlertDot"></span>
+          </button>
+          <div class="top-avatar" id="topAvatar">SB</div>
+        </div>
+      </header>
+
+      <!-- Dashboard -->
+      <section class="view active" id="dashboardView">
+        <div class="page-heading">
+          <div><p class="eyebrow">YOUR OVERVIEW</p><h1>Good day<span id="greetName"></span>! <span class="wave">✳</span></h1>
+            <p class="page-subtitle">Here's what's happening with the products you've bought.</p></div>
+          <button class="primary-button" data-view="purchases">View purchases →</button>
+        </div>
+
+        <section class="id-banner" aria-labelledby="idLabel">
+          <div class="id-main">
+            <p class="eyebrow" id="idLabel">YOUR SAVEBITE ID</p>
+            <div class="id-code-row">
+              <strong class="id-code" id="customerCode">…</strong>
+              <button class="secondary-button" id="copyCode" type="button" disabled>Copy</button>
+            </div>
+            <p class="id-help">Show this ID at the billing counter. Your store sends the items you bought straight to this account.</p>
+          </div>
+          <ol class="how-steps" aria-label="How SaveBite works">
+            <li><span>1</span>Show your ID at billing</li>
+            <li><span>2</span>Say yes to the item list</li>
+            <li><span>3</span>Items and expiry dates appear here</li>
+          </ol>
+        </section>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-top"><span>Total items</span><span class="stat-icon accent-icon">▤</span></div>
+            <div class="stat-number" id="totalStat">0</div><div class="stat-foot">From your store bills</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>Expiring soon</span><span class="stat-icon amber-icon">◷</span></div>
+            <div class="stat-number" id="expiringStat">0</div><div class="stat-foot">Within the next 7 days</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>Expired items</span><span class="stat-icon red-icon">!</span></div>
+            <div class="stat-number" id="expiredStat">0</div><div class="stat-foot">Hidden from lists after 90 days</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>Safe items</span><span class="stat-icon accent-icon">✓</span></div>
+            <div class="stat-number" id="safeStat">0</div><div class="stat-foot">More than 7 days left</div>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel inventory-preview">
+            <div class="panel-heading"><div><h2>Use these first</h2><p>Closest to their expiry date</p></div>
+              <button class="text-button" data-view="inventory">View all <span>→</span></button></div>
+            <div class="table-wrap" id="recentTableWrap">
+              <table><thead><tr><th>PRODUCT</th><th>EXPIRY DATE</th><th>STATUS</th></tr></thead>
+                <tbody id="recentProducts"></tbody></table>
+            </div>
+            <div class="empty-state hidden" id="recentEmpty"><span>▤</span><strong>No items yet</strong><p>Show your SaveBite ID at a partner store's billing counter and your items will appear here.</p></div>
+          </section>
+          <section class="panel alerts-preview">
+            <div class="panel-heading"><div><h2>Expiry overview</h2><p>Keep an eye on what's next</p></div><span class="soft-tag">LIVE</span></div>
+            <div class="expiry-summary">
+              <div class="expiry-row"><span class="expiry-dot dot-red"></span><span>Expired</span><strong id="overviewExpired">0</strong></div>
+              <div class="mini-track"><span class="track-red" id="expiredTrack"></span></div>
+              <div class="expiry-row"><span class="expiry-dot dot-amber"></span><span>Expiring in 7 days</span><strong id="overviewExpiring">0</strong></div>
+              <div class="mini-track"><span class="track-amber" id="expiringTrack"></span></div>
+              <div class="expiry-row"><span class="expiry-dot dot-green"></span><span>Safe</span><strong id="overviewSafe">0</strong></div>
+              <div class="mini-track"><span class="track-green" id="safeTrack"></span></div>
+            </div>
+            <div class="save-note"><span>✳</span><p><strong>Stay one step ahead.</strong><br>We'll alert you here before each item expires, and let you know the moment a store adds a new bill.</p></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- My items (read-only) -->
+      <section class="view" id="inventoryView">
+        <div class="page-heading"><div><p class="eyebrow">YOUR ITEMS</p><h1>My items</h1><p class="page-subtitle">Everything you've bought from partner stores, with its expiry date.</p></div></div>
+        <section class="panel inventory-panel">
+          <div class="inventory-toolbar">
+            <div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Search items or stores..." aria-label="Search items"></div>
+            <select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select>
+            <select id="statusFilter" aria-label="Filter by expiry status"><option value="all">All statuses</option><option value="expired">Expired</option><option value="expiring">Expiring soon</option><option value="safe">Safe</option></select>
+            <div class="toolbar-actions"><span class="soft-tag">ADDED BY YOUR STORE</span></div>
+          </div>
+          <div class="table-wrap" id="inventoryTableWrap">
+            <table class="full-table"><thead><tr><th>PRODUCT</th><th class="hide-sm">CATEGORY</th><th>QTY</th><th class="hide-sm">STORE</th><th>EXPIRY DATE</th><th>STATUS</th></tr></thead>
+              <tbody id="inventoryBody"></tbody></table>
+          </div>
+          <div class="empty-state hidden" id="inventoryEmpty"><span>⌕</span><strong id="inventoryEmptyTitle">No items found</strong><p id="inventoryEmptyText">Try changing your search or filters.</p></div>
+          <div class="table-footer"><span id="inventoryResultCount">0 items</span><span>Items are added by your store at billing</span></div>
+        </section>
+      </section>
+
+      <!-- Purchases (one card per store bill) -->
+      <section class="view" id="purchasesView">
+        <div class="page-heading"><div><p class="eyebrow">YOUR BILLS</p><h1>Purchases</h1><p class="page-subtitle">Every bill your stores have sent to SaveBite, with each item's expiry date.</p></div></div>
+        <div class="purchase-list" id="purchaseList"></div>
+        <div class="empty-state panel hidden" id="purchasesEmpty"><span>▥</span><strong>No purchases yet</strong><p>When a partner store bills you and you say yes to the item list, the bill shows up here.</p></div>
+      </section>
+
+      <!-- Notifications -->
+      <section class="view" id="notificationsView">
+        <div class="page-heading"><div><p class="eyebrow">STAY INFORMED</p><h1>Notifications</h1><p class="page-subtitle">Expiry alerts and new bills from your stores.</p></div>
+          <div class="heading-actions">
+            <button class="secondary-button hidden" id="enableAlertsButton" type="button">Turn on browser alerts</button>
+            <button class="secondary-button" id="markReadButton" type="button">Mark all as read</button>
+          </div></div>
+        <section class="panel notifications-panel"><div class="panel-heading"><div><h2>Alerts</h2><p id="notificationSubtitle">Your latest product alerts</p></div><span class="soft-tag" id="alertCountLabel">0 ALERTS</span></div>
+          <div id="notificationList"></div>
+          <div class="empty-state hidden" id="notificationsEmpty"><span>✓</span><strong>You're all caught up</strong><p>There are no alerts right now.</p></div>
+        </section>
+      </section>
+
+      <footer class="footer"><span>© 2026 SaveBite</span><span>Make every product count <span class="footer-star">✳</span></span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastText"></span></div>
+</body>
+</html>
